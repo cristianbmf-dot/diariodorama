@@ -52,6 +52,10 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 #ov img{max-height:68vh;max-width:100%;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .hint{color:#E9DDF2;font-size:14px;text-align:center;max-width:36ch;margin:0}
 .ovb{display:flex;gap:10px}
+.backup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.backup-actions .b{flex:1 1 180px}
+#backupFile{display:none}
+.backup-note{font-size:13px;line-height:1.5}
 @media (prefers-reduced-motion:no-preference){.row{transition:border-color .15s}.row:hover{border-color:var(--pink)}}
 </style>
 </head>
@@ -73,6 +77,18 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
       <span class="m" style="margin:0;max-width:44ch">This product uses the TMDB API but is not endorsed or certified by TMDB. Dados e imagens fornecidos por The Movie Database (TMDB).</span>
     </div>
   </section>
+
+  <section id="backup" style="margin-top:28px;padding-top:16px;border-top:1px solid var(--line)">
+    <b>Backup dos meus dados</b>
+    <p class="m backup-note" style="margin:6px 0">Exporte uma cópia das suas listas e avaliações para guardar com segurança. Para recuperar seus dados neste ou em outro navegador, importe um arquivo de backup criado pelo Diário de Doramas.</p>
+    <div class="backup-actions">
+      <button class="b share" id="exportBackup" type="button">Exportar backup (.json)</button>
+      <button class="b" id="importBackup" type="button">Importar backup</button>
+      <input id="backupFile" type="file" accept=".json,application/json" aria-label="Selecionar arquivo de backup">
+    </div>
+    <p class="m" id="backupMsg" role="status" aria-live="polite" style="margin-top:10px"></p>
+  </section>
+
 </main>
 <div class="dock"><div><span class="cnt" id="cnt"></span><button class="big" id="gen">Gerar meu cartão</button></div></div>
 <div id="ov" role="dialog" aria-modal="true" aria-label="Cartão para compartilhar">
@@ -194,6 +210,64 @@ $("#shr").onclick=async()=>{const url=location.origin,text=shareTxt;
     else alert("Seu navegador não abre o compartilhamento direto. Salve a imagem, toque em Copiar texto e link e poste nos Stories.")}catch(e){}};
 $("#cpy").onclick=async()=>{const t=shareTxt+" "+location.origin;
   try{await navigator.clipboard.writeText(t);$("#cpy").textContent="Copiado!"}catch(e){prompt("Copie o texto abaixo:",t)}};
+
+function backupStatus(text){$("#backupMsg").textContent=text}
+$("#exportBackup").addEventListener("click",()=>{
+  try{
+    const payload={app:"Diário de Doramas",schemaVersion:1,exportedAt:new Date().toISOString(),data:{name:S.name||"",it:S.it||{}}};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    const day=new Date().toISOString().slice(0,10);
+    a.href=url;a.download="diario-de-doramas-backup-"+day+".json";
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const total=Object.keys(payload.data.it).length;
+    backupStatus("Backup exportado com sucesso: "+total+" registro(s). Guarde o arquivo em um local seguro.");
+  }catch(e){backupStatus("Não foi possível exportar o backup. Tente novamente neste navegador.")}
+});
+$("#importBackup").addEventListener("click",()=>$("#backupFile").click());
+function validateBackup(payload){
+  if(!payload||payload.app!=="Diário de Doramas"||payload.schemaVersion!==1||!payload.data||typeof payload.data!=="object"||Array.isArray(payload.data))
+    throw new Error("Este arquivo não é um backup válido do Diário de Doramas.");
+  const data=payload.data;
+  if(typeof data.name!=="string"||data.name.length>24||!data.it||typeof data.it!=="object"||Array.isArray(data.it))
+    throw new Error("O formato do backup está incorreto.");
+  const entries=Object.entries(data.it);
+  if(entries.length>2000)throw new Error("O backup contém registros demais para ser importado.");
+  const it={};
+  for(const [key,v] of entries){
+    if(!/^\d{1,15}$/.test(key)||!v||typeof v!=="object"||Array.isArray(v)||String(v.id)!==key||typeof v.t!=="string"||!v.t.trim()||v.t.length>300)
+      throw new Error("O backup contém um registro inválido. Nenhum dado foi alterado.");
+    const o=v.o==null?v.t:v.o,y=v.y==null?"":v.y,p=v.p==null?"":v.p;
+    const r=v.r==null?0:v.r,c=v.c==null?"":v.c;
+    if(typeof o!=="string"||o.length>300||typeof y!=="string"||!/^(\d{4})?$/.test(y)||
+       typeof p!=="string"||(p!==""&&(!/^\/[A-Za-z0-9._/-]{1,200}$/.test(p)||p.includes("..")))||
+       !["seen","want"].includes(v.st)||!Number.isInteger(r)||r<0||r>5||typeof c!=="string"||c.length>90)
+      throw new Error("O backup contém dados fora do formato esperado. Nenhum dado foi alterado.");
+    it[key]={id:key,t:v.t,o,y,p,st:v.st,r,c};
+  }
+  return {name:data.name,it};
+}
+$("#backupFile").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  try{
+    if(file.size>2*1024*1024)throw new Error("O arquivo é maior que 2 MB. Selecione um backup válido.");
+    const payload=JSON.parse(await file.text());
+    const next=validateBackup(payload);
+    const count=Object.keys(next.it).length;
+    if(!confirm("Importar "+count+" registro(s)? Esta ação substituirá as listas e avaliações salvas atualmente neste navegador."))return;
+    try{localStorage.setItem("dd2",JSON.stringify(next))}
+    catch(err){throw new Error("Não foi possível salvar os dados neste navegador. Verifique o espaço disponível e tente novamente.")}
+    S=next;
+    $("#nm").value=S.name||"";
+    $("#q").value="";query="";
+    filter=Object.values(S.it).some(x=>x.st==="seen")?"seen":Object.values(S.it).some(x=>x.st==="want")?"want":"all";
+    tabs();render();
+    backupStatus("Backup importado com sucesso: "+count+" registro(s) restaurado(s).");
+  }catch(err){backupStatus(err instanceof SyntaxError?"O arquivo não é um JSON válido. Seus dados atuais não foram alterados.":(err.message||"Não foi possível importar o backup."))}
+  finally{e.target.value=""}
+});
+
 tabs();render();loadPop();
 </script>
 </body>
