@@ -52,8 +52,12 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 #ov img{max-height:68vh;max-width:100%;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .hint{color:#E9DDF2;font-size:14px;text-align:center;max-width:36ch;margin:0}
 .ovb{display:flex;gap:10px}
-.backup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.backup-actions .b{flex:1 1 180px}
+.backup-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;margin-top:14px}
+.backup-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface);display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.backup-card p{margin:0;flex:1}
+.backup-card .b{width:100%;white-space:normal}
+.backup-card h3{font-size:16px;margin:0}
+.backup-warning{font-size:12px;color:var(--mute);margin:10px 0 0}
 #backupFile{display:none}
 .backup-note{font-size:13px;line-height:1.5}
 .backup-message{display:none;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px;line-height:1.45;overflow-wrap:anywhere}
@@ -83,13 +87,22 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
   </section>
 
   <section id="backup" style="margin-top:28px;padding-top:16px;border-top:1px solid var(--line)">
-    <b>Backup dos meus dados</b>
-    <p class="m backup-note" style="margin:6px 0">Exporte uma cópia das suas listas e avaliações para guardar com segurança. Para recuperar seus dados neste ou em outro navegador, importe um arquivo de backup criado pelo Diário de Doramas.</p>
+    <b>Meus dados e backup</b>
+    <p class="m backup-note" style="margin:6px 0">Guarde uma cópia das suas listas e avaliações para não perdê-las se trocar de navegador ou dispositivo. O backup é um arquivo salvo no seu computador ou celular — ele não fica guardado automaticamente na internet.</p>
     <div class="backup-actions">
-      <button class="b share" id="exportBackup" type="button">Exportar backup (.json)</button>
-      <button class="b" id="importBackup" type="button">Importar backup</button>
-      <input id="backupFile" type="file" accept=".json,application/json" aria-label="Selecionar arquivo de backup">
+      <div class="backup-card">
+        <h3>⬇️ Salvar uma cópia</h3>
+        <p class="m backup-note">Baixa um arquivo de backup (.json) com suas listas, notas, comentários e nome. Guarde esse arquivo em um lugar seguro.</p>
+        <button class="b share" id="exportBackup" type="button">Baixar meu backup</button>
+      </div>
+      <div class="backup-card">
+        <h3>↩️ Recuperar meus dados</h3>
+        <p class="m backup-note">Use um arquivo de backup criado pelo Diário de Doramas para restaurar seus dados neste navegador ou em outro dispositivo.</p>
+        <button class="b" id="importBackup" type="button">Escolher backup para restaurar</button>
+        <input id="backupFile" type="file" accept=".json,application/json" aria-label="Selecionar arquivo de backup">
+      </div>
     </div>
+    <p class="backup-warning">Atenção: restaurar um backup substitui as listas e avaliações atuais deste navegador. Exporte os dados atuais antes de restaurar, se quiser guardá-los.</p>
     <p class="backup-message" id="backupMsg" role="status" aria-live="assertive" style="margin-top:10px"></p>
   </section>
 
