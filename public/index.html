@@ -16,6 +16,12 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,sans-serif;line-height:1.45}
 main{max-width:720px;margin:0 auto;padding:20px 16px 90px}
 h1{font-family:Gloock,Georgia,serif;font-weight:400;font-size:clamp(34px,8vw,52px);line-height:1.05;margin:8px 0 6px}
+.hero{position:relative;margin:-20px -16px 14px;border-radius:0 0 26px 26px;overflow:hidden;container-type:inline-size;background:#2B1034}
+.hero img{display:block;width:100%;height:auto}
+.hero-in{position:absolute;left:40%;top:51%;transform:translate(-50%,-50%);text-align:center;width:max-content}
+.hero h1{font-family:Gloock,Georgia,serif;font-weight:400;font-size:5.8cqw;line-height:1.05;color:#fff;margin:0;white-space:nowrap;text-shadow:0 2px 14px rgba(43,16,52,.7)}
+.hero .sub{font-size:2.7cqw;color:#FFE3EC;margin:.6em 0 0;max-width:none;white-space:nowrap;text-shadow:0 1px 8px rgba(43,16,52,.8)}
+@container (max-width:480px){.hero h1{font-size:7cqw}.hero .sub{font-size:3.3cqw}}
 .sub{color:var(--mute);margin:0 0 18px;max-width:46ch}
 .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 input[type=text],input[type=search]{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
@@ -51,8 +57,8 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 </head>
 <body>
 <main>
-  <h1>Diário de doramas</h1>
-  <p class="sub">Marque o que você já viu, dê sua nota e gere um cartão para postar nos Stories.</p>
+  <header class="hero"><img src="banner.webp" alt="" width="1024" height="687"><div class="hero-in"><h1>Diário de Doramas</h1><p class="sub">Marque, avalie e compartilhe</p></div></header>
+  <p class="m" style="margin:0 0 14px">Marque o que você já viu, dê sua nota e gere um cartão para postar nos Stories.</p>
   <p class="m" id="msg" role="status"></p>
   <label class="sr" for="nm" style="position:absolute;left:-9999px">Seu nome</label>
   <div class="bar"><input type="text" id="nm" placeholder="Seu @ ou nome (aparece no cartão)" maxlength="24"></div>
