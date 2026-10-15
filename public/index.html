@@ -56,6 +56,10 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 .backup-actions .b{flex:1 1 180px}
 #backupFile{display:none}
 .backup-note{font-size:13px;line-height:1.5}
+.backup-message{display:none;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.backup-message.show{display:block}
+.backup-message.error{border-color:#C83B52;color:#C83B52;font-weight:700}
+.backup-message.success{border-color:var(--jade)}
 @media (prefers-reduced-motion:no-preference){.row{transition:border-color .15s}.row:hover{border-color:var(--pink)}}
 </style>
 </head>
@@ -86,7 +90,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
       <button class="b" id="importBackup" type="button">Importar backup</button>
       <input id="backupFile" type="file" accept=".json,application/json" aria-label="Selecionar arquivo de backup">
     </div>
-    <p class="m" id="backupMsg" role="status" aria-live="polite" style="margin-top:10px"></p>
+    <p class="backup-message" id="backupMsg" role="status" aria-live="assertive" style="margin-top:10px"></p>
   </section>
 
 </main>
@@ -211,7 +215,7 @@ $("#shr").onclick=async()=>{const url=location.origin,text=shareTxt;
 $("#cpy").onclick=async()=>{const t=shareTxt+" "+location.origin;
   try{await navigator.clipboard.writeText(t);$("#cpy").textContent="Copiado!"}catch(e){prompt("Copie o texto abaixo:",t)}};
 
-function backupStatus(text){$("#backupMsg").textContent=text}
+function backupStatus(text,type="success"){const el=$("#backupMsg");el.textContent=text;el.className="backup-message show "+type;el.setAttribute("role",type==="error"?"alert":"status");}
 $("#exportBackup").addEventListener("click",()=>{
   try{
     const payload={app:"Diário de Doramas",schemaVersion:1,exportedAt:new Date().toISOString(),data:{name:S.name||"",it:S.it||{}}};
@@ -221,8 +225,8 @@ $("#exportBackup").addEventListener("click",()=>{
     a.href=url;a.download="diario-de-doramas-backup-"+day+".json";
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     const total=Object.keys(payload.data.it).length;
-    backupStatus("Backup exportado com sucesso: "+total+" registro(s). Guarde o arquivo em um local seguro.");
-  }catch(e){backupStatus("Não foi possível exportar o backup. Tente novamente neste navegador.")}
+    backupStatus("Backup exportado com sucesso: "+total+" registro(s). Guarde o arquivo em um local seguro.","success");
+  }catch(e){backupStatus("Não foi possível exportar o backup. Tente novamente neste navegador.","error");alert("Não foi possível exportar o backup. Tente novamente neste navegador.")}
 });
 $("#importBackup").addEventListener("click",()=>$("#backupFile").click());
 function validateBackup(payload){
@@ -263,8 +267,8 @@ $("#backupFile").addEventListener("change",async e=>{
     $("#q").value="";query="";
     filter=Object.values(S.it).some(x=>x.st==="seen")?"seen":Object.values(S.it).some(x=>x.st==="want")?"want":"all";
     tabs();render();
-    backupStatus("Backup importado com sucesso: "+count+" registro(s) restaurado(s).");
-  }catch(err){backupStatus(err instanceof SyntaxError?"O arquivo não é um JSON válido. Seus dados atuais não foram alterados.":(err.message||"Não foi possível importar o backup."))}
+    backupStatus("Backup importado com sucesso: "+count+" registro(s) restaurado(s).","success");
+  }catch(err){const message=err instanceof SyntaxError?"O arquivo não é um JSON válido. Seus dados atuais não foram alterados.":(err.message||"Não foi possível importar o backup.");backupStatus(message,"error");alert(message)}
   finally{e.target.value=""}
 });
 
