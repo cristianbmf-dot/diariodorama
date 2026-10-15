@@ -1,0 +1,8 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/tmdb"
+  to = "/.netlify/functions/tmdb"
+  status = 200
