@@ -1,9 +1,11 @@
 // Proxy do TMDB: a chave fica só aqui (variável de ambiente TMDB_API_KEY),
 // nunca vai para o navegador. Só duas consultas são permitidas.
+// Gêneros que não são doramas: reality (10764), talk (10767), notícias (10763), documentário (99), infantil (10762), animação (16)
+const BLOCK = [10764, 10767, 10763, 99, 10762, 16];
 const RULES = {
   discover: {
     path: "discover/tv",
-    fixed: { with_original_language: "ko", sort_by: "popularity.desc", "vote_count.gte": "150" },
+    fixed: { with_original_language: "ko", with_genres: "18|35", without_genres: BLOCK.join(","), sort_by: "popularity.desc", "vote_count.gte": "150" },
     clean: (q) => ({ page: String(Math.min(Math.max(parseInt(q.page, 10) || 1, 1), 5)) }),
   },
   search: {
@@ -38,6 +40,8 @@ exports.handler = async (event) => {
   try {
     const r = await fetch(url);
     const data = await r.json();
+    if (q.action === "search" && Array.isArray(data.results))
+      data.results = data.results.filter((x) => !(x.genre_ids || []).some((g) => BLOCK.includes(g)));
     if (!r.ok) return json(r.status === 429 ? 429 : 502, { error: "Falha ao consultar o TMDB" }, { "Cache-Control": "no-store" });
     return json(200, data, {
       "Cache-Control": "public, max-age=3600",
