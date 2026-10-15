@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diário de Doramas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FBF7FC;--surface:#fff;--ink:#2B1034;--mute:#7A6683;--line:#E7DAEE;--pink:#E8447A;--jade:#1F9F86;--on-pink:#fff;--chip:#F1E6F7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1A0B20;--surface:#26122E;--ink:#F6EBFA;--mute:#B49CBF;--line:#3C2247;--pink:#FF6A98;--jade:#3CCBAF;--chip:#32183C}}
+:root[data-theme="dark"]{--bg:#1A0B20;--surface:#26122E;--ink:#F6EBFA;--mute:#B49CBF;--line:#3C2247;--pink:#FF6A98;--jade:#3CCBAF;--chip:#32183C}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,sans-serif;line-height:1.45}
+main{max-width:720px;margin:0 auto;padding:20px 16px 90px}
+h1{font-family:Gloock,Georgia,serif;font-weight:400;font-size:clamp(34px,8vw,52px);line-height:1.05;margin:8px 0 6px}
+.sub{color:var(--mute);margin:0 0 18px;max-width:46ch}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input[type=text],input[type=search]{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.tabs{display:flex;gap:6px;margin:10px 0 16px;overflow-x:auto}
+.tab{font:inherit;font-weight:600;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+.tab[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.row{display:grid;grid-template-columns:64px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
+.cover{width:64px;height:92px;background-size:cover;background-position:center;border-radius:10px;display:flex;align-items:flex-end;padding:6px;color:#fff;font-family:Gloock,Georgia,serif;font-size:22px;line-height:1}
+.t{font-weight:700;font-size:17px}
+.m{color:var(--mute);font-size:13px;margin-bottom:8px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.b{font:inherit;font-weight:600;font-size:14px;border-radius:10px;padding:7px 12px;border:1.5px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.b.on-seen{background:var(--pink);border-color:var(--pink);color:var(--on-pink)}
+.b.on-want{background:var(--jade);border-color:var(--jade);color:#fff}
+.b.share{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stars{display:flex;gap:2px;margin-top:8px}
+.star{font-size:26px;line-height:1;background:none;border:0;padding:2px;cursor:pointer;color:var(--line)}
+.star.f{color:var(--pink)}
+.c{margin-top:8px}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+.dock>div{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.big{font:inherit;font-weight:700;font-size:16px;background:var(--pink);color:var(--on-pink);border:0;border-radius:14px;padding:13px 18px;cursor:pointer;flex:1}
+.cnt{color:var(--mute);font-size:14px;min-width:92px}
+.empty{color:var(--mute);text-align:center;padding:30px 10px}
+#ov{position:fixed;inset:0;background:rgba(20,6,26,.8);display:none;flex-direction:column;align-items:center;gap:12px;padding:16px;overflow:auto;z-index:20}
+#ov.open{display:flex}
+#ov img{max-height:68vh;max-width:100%;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.hint{color:#E9DDF2;font-size:14px;text-align:center;max-width:36ch;margin:0}
+.ovb{display:flex;gap:10px}
+@media (prefers-reduced-motion:no-preference){.row{transition:border-color .15s}.row:hover{border-color:var(--pink)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Diário de doramas</h1>
+  <p class="sub">Marque o que você já viu, dê sua nota e gere um cartão para postar nos Stories.</p>
+  <p class="m" id="msg" role="status"></p>
+  <label class="sr" for="nm" style="position:absolute;left:-9999px">Seu nome</label>
+  <div class="bar"><input type="text" id="nm" placeholder="Seu @ ou nome (aparece no cartão)" maxlength="24"></div>
+  <input type="search" id="q" placeholder="Buscar dorama" aria-label="Buscar dorama">
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+  <section id="sobre" style="margin-top:28px;padding-top:16px;border-top:1px solid var(--line)">
+    <b>Sobre e créditos</b>
+    <p class="m" style="margin:6px 0">Diário de doramas é um projeto independente para registrar e compartilhar o que você assiste.</p>
+    <div id="tmdbcred" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="logoslot"></span>
+      <span class="m" style="margin:0;max-width:44ch">This product uses the TMDB API but is not endorsed or certified by TMDB. Dados e imagens fornecidos por The Movie Database (TMDB).</span>
+    </div>
+  </section>
+</main>
+<div class="dock"><div><span class="cnt" id="cnt"></span><button class="big" id="gen">Gerar meu cartão</button></div></div>
+<div id="ov" role="dialog" aria-modal="true" aria-label="Cartão para compartilhar">
+  <img id="out" alt="Cartão gerado">
+  <p class="hint">Para salvar, segure a imagem (celular) ou clique com o botão direito (computador).</p>
+  <div class="ovb"><button class="b share" id="shr">Compartilhar</button><button class="b" id="cls">Fechar</button></div>
+</div>
+<script>
+const IMG="https://image.tmdb.org/t/p/";
+/* Cole aqui o endereço do logo OFICIAL do TMDB (baixe em themoviedb.org/about/logos-attribution). Deixe vazio para mostrar só o texto. */
+const TMDB_LOGO="https://www.themoviedb.org/assets/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg";
+if(TMDB_LOGO){const i=document.createElement("img");i.src=TMDB_LOGO;i.alt="TMDB";i.style.height="28px";i.style.width="auto";document.getElementById("logoslot").appendChild(i)}
+let S={name:"",it:{}},POP=[],RES=[],filter="all",query="",tm;
+try{const r=localStorage.getItem("dd2");if(r)S=JSON.parse(r)}catch(e){}
+const save=()=>{try{localStorage.setItem("dd2",JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const hue=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return h};
+const ini=t=>t.split(/\s+/).filter(w=>/^[A-Za-zÀ-ú]/.test(w)).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+const grad=t=>{const h=hue(t);return `linear-gradient(160deg,hsl(${h} 62% 48%),hsl(${(h+45)%360} 58% 26%))`};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const say=t=>$("#msg").textContent=t||"";
+async function api(action,params){const u=new URL("/api/tmdb",location.origin);u.search=new URLSearchParams({action,...params});
+  const r=await fetch(u);if(!r.ok)throw new Error(r.status===429?"Muitos acessos agora. Tente de novo em instantes.":"Não foi possível carregar os doramas agora.");return r.json()}
+const norm=x=>({id:String(x.id),t:x.name,o:x.original_name,y:(x.first_air_date||"").slice(0,4),p:x.poster_path||""});
+async function loadPop(){say("Carregando doramas...");
+  try{const rs=await Promise.all([1,2,3,4].map(p=>api("discover",{page:p})));
+    POP=rs.flatMap(r=>r.results).map(norm);say("")}catch(e){say(e.message)}render()}
+async function doSearch(q){try{const r=await api("search",{query:q});RES=r.results.filter(x=>x.original_language==="ko").map(norm);say(RES.length?"":"Nada encontrado.")}catch(e){say(e.message)}render()}
+const TABS=[["all","Todos"],["seen","Já vi"],["want","Quero ver"]];
+function tabs(){$("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="tab" data-tab="${k}" aria-pressed="${filter===k}">${l}</button>`).join("")}
+const find=id=>S.it[id]||[...POP,...RES].find(x=>x.id===id);
+const cov=x=>x.p?`background-image:url(${IMG}w185${x.p})`:`background:${grad(x.t)}`;
+function render(){
+  const q=query.trim().toLowerCase();
+  let L=filter==="all"?(q.length>=2?RES:POP):Object.values(S.it).filter(x=>x.st===filter&&(x.t+x.o).toLowerCase().includes(q));
+  $("#list").innerHTML=L.length?L.map(x=>{
+    const i=S.it[x.id]||{},seen=i.st==="seen";
+    return `<div class="row" data-id="${x.id}"><div class="cover" style="${cov(x)}">${x.p?"":ini(x.t)}</div>
+      <div><div class="t">${esc(x.t)}</div><div class="m">${x.o!==x.t?esc(x.o)+", ":""}${x.y}</div>
+      <div class="acts">
+        <button class="b ${seen?"on-seen":""}" data-a="seen" aria-pressed="${seen}">Já vi</button>
+        <button class="b ${i.st==="want"?"on-want":""}" data-a="want" aria-pressed="${i.st==="want"}">Quero ver</button>
+        ${seen&&i.r?`<button class="b share" data-a="one">Compartilhar</button>`:""}</div>
+      ${seen?`<div class="stars" role="group" aria-label="Sua nota">${[1,2,3,4,5].map(n=>`<button class="star ${n<=(i.r||0)?"f":""}" data-a="star" data-n="${n}" aria-label="${n} estrelas">★</button>`).join("")}</div>
+      <input class="c" type="text" data-a="cm" maxlength="90" placeholder="Sua opinião em uma frase" aria-label="Sua opinião" value="${esc(i.c||"")}">`:""}
+      </div></div>`}).join(""):`<div class="empty">Nada aqui ainda.</div>`;
+  const v=Object.values(S.it);
+  $("#cnt").textContent=`${v.filter(x=>x.st==="seen").length} vistos, ${v.filter(x=>x.st==="want").length} na fila`;
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;filter=b.dataset.tab;tabs();render()});
+$("#q").addEventListener("input",e=>{query=e.target.value;clearTimeout(tm);if(filter==="all"&&query.trim().length>=2)tm=setTimeout(()=>doSearch(query.trim()),400);else{say("");render()}});
+$("#nm").value=S.name||"";
+$("#nm").addEventListener("input",e=>{S.name=e.target.value;save()});
+$("#list").addEventListener("input",e=>{if(e.target.dataset.a!=="cm")return;S.it[e.target.closest(".row").dataset.id].c=e.target.value;save()});
+$("#list").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-a]");if(!b||b.dataset.a==="cm")return;const a=b.dataset.a,id=b.closest(".row").dataset.id;
+  const i=S.it[id]||(S.it[id]={...find(id)});
+  if(a==="seen"||a==="want"){if(i.st===a)delete S.it[id];else i.st=a}
+  else if(a==="star"){i.r=i.r===+b.dataset.n?0:+b.dataset.n}
+  else if(a==="one"){save();return show(await make("one",id))}
+  if(S.it[id]&&!S.it[id].st)delete S.it[id];
+  save();render();
+});
+function wrap(c,text,x,y,w,lh,max){const ws=text.split(" ");let l="",n=0;for(const k of ws){const t=l?l+" "+k:k;if(c.measureText(t).width>w&&l){c.fillText(l,x,y);y+=lh;l=k;if(++n>=max-1)break}else l=t}c.fillText(l,x,y);return y+lh}
+const loadImg=p=>new Promise(res=>{if(!p)return res(null);const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);i.src=IMG+"w500"+p});
+function cover(c,img,t,x,y,w,h,r){c.save();c.beginPath();c.roundRect(x,y,w,h,r);c.clip();
+  if(img){const s=Math.max(w/img.width,h/img.height),dw=img.width*s,dh=img.height*s;c.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh)}
+  else{const hh=hue(t),g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,`hsl(${hh} 62% 50%)`);g.addColorStop(1,`hsl(${(hh+45)%360} 58% 24%)`);c.fillStyle=g;c.fillRect(x,y,w,h);
+    c.fillStyle="rgba(255,255,255,.9)";c.textAlign="center";c.font=`${h*.2}px Gloock,Georgia,serif`;c.fillText(ini(t),x+w/2,y+h/2+h*.07)}c.restore()}
+function base(){const cv=document.createElement("canvas");cv.width=1080;cv.height=1920;const c=cv.getContext("2d");
+  const g=c.createLinearGradient(0,0,1080,1920);g.addColorStop(0,"#2B1034");g.addColorStop(1,"#5B1B55");c.fillStyle=g;c.fillRect(0,0,1080,1920);
+  c.fillStyle="rgba(255,106,152,.22)";c.beginPath();c.arc(980,260,330,0,7);c.fill();
+  c.fillStyle="rgba(63,203,175,.14)";c.beginPath();c.arc(70,1650,300,0,7);c.fill();
+  c.textAlign="center";c.fillStyle="#FFC2D6";c.font="600 38px Figtree,sans-serif";c.fillText("Meu diário de doramas",540,140);return[cv,c]}
+function foot(c){c.fillStyle="#fff";c.font="600 44px Figtree,sans-serif";c.textAlign="center";c.fillText(S.name?(S.name[0]==="@"?S.name:"@"+S.name):"",540,1800)}
+const stars=r=>"★".repeat(r)+"☆".repeat(5-r);
+async function drawOne(id,im){const[cv,c]=base(),x=S.it[id],img=im?await loadImg(x.p):null;
+  cover(c,img,x.t,230,230,620,880,36);
+  c.textAlign="center";c.fillStyle="#fff";c.font="80px Gloock,Georgia,serif";let y=wrap(c,x.t,540,1220,900,92,2);
+  c.fillStyle="#FF6A98";c.font="110px Figtree,sans-serif";c.fillText(stars(x.r),540,y+50);y+=140;
+  c.fillStyle="#fff";c.font="italic 600 46px Figtree,sans-serif";if(x.c)wrap(c,"“"+x.c+"”",540,y+20,860,62,3);
+  foot(c);return cv}
+async function drawList(im){const[cv,c]=base();
+  const seen=Object.values(S.it).filter(x=>x.st==="seen"),want=Object.values(S.it).filter(x=>x.st==="want");
+  const top=[...seen].sort((a,b)=>(b.r||0)-(a.r||0)).slice(0,5),imgs=await Promise.all(top.map(x=>im?loadImg(x.p):null));
+  c.fillStyle="#fff";c.font="104px Gloock,Georgia,serif";c.fillText(`${seen.length} ${seen.length===1?"dorama visto":"doramas vistos"}`,540,320);
+  c.fillStyle="#FFC2D6";c.font="600 44px Figtree,sans-serif";c.fillText(`${want.length} na fila para ver`,540,400);
+  let y=480;
+  if(!top.length){c.fillStyle="#fff";c.font="46px Figtree,sans-serif";c.fillText("Marque seus doramas vistos para montar o ranking",540,y+80)}
+  top.forEach((x,k)=>{c.fillStyle="rgba(255,255,255,.1)";c.beginPath();c.roundRect(70,y,940,210,28);c.fill();
+    cover(c,imgs[k],x.t,90,y+15,120,180,14);
+    c.textAlign="left";c.fillStyle="#FF6A98";c.font="64px Gloock,Georgia,serif";c.fillText(k+1,235,y+120);
+    c.fillStyle="#fff";c.font="700 42px Figtree,sans-serif";let s=x.t;while(c.measureText(s).width>690)s=s.slice(0,-2);c.fillText(s===x.t?s:s+"…",320,y+95);
+    c.fillStyle="#FF6A98";c.font="42px Figtree,sans-serif";c.fillText(stars(x.r||0),320,y+150);y+=230});
+  c.textAlign="center";
+  if(want.length){c.fillStyle="#3CCBAF";c.font="700 42px Figtree,sans-serif";c.fillText("Quero ver",540,1660);
+    c.fillStyle="#fff";c.font="40px Figtree,sans-serif";c.fillText(want.slice(0,2).map(x=>x.t).join(", ").slice(0,46),540,1720)}
+  foot(c);return cv}
+async function make(kind,id){try{await document.fonts.load("100px Gloock")}catch(e){}
+  for(const im of [true,false]){const cv=await(kind==="one"?drawOne(id,im):drawList(im));try{cv.toDataURL();return cv}catch(e){}}}
+let blob=null;
+function show(cv){$("#out").src=cv.toDataURL("image/png");cv.toBlob(b=>blob=b);$("#ov").classList.add("open");$("#cls").focus()}
+$("#gen").onclick=async()=>show(await make("list"));
+$("#cls").onclick=()=>$("#ov").classList.remove("open");
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#ov").classList.remove("open")});
+$("#shr").onclick=async()=>{try{const f=new File([blob],"meu-dorama.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else alert("Seu navegador não abre o compartilhamento direto. Salve a imagem e poste nos Stories.")}catch(e){}};
+tabs();render();loadPop();
+</script>
+</body>
+</html>
