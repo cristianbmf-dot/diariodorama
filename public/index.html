@@ -49,7 +49,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 .empty{color:var(--mute);text-align:center;padding:30px 10px}
 #ov{position:fixed;inset:0;background:rgba(20,6,26,.8);display:none;flex-direction:column;align-items:center;gap:12px;padding:16px;overflow:auto;z-index:20}
 #ov.open{display:flex}
-#ov img{max-height:68vh;max-width:100%;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#ov img{max-height:62vh;max-width:100%;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .hint{color:#E9DDF2;font-size:14px;text-align:center;max-width:36ch;margin:0}
 .ovb{display:flex;gap:10px}
 .backup-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;margin-top:14px}
@@ -85,7 +85,6 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
       <span class="m" style="margin:0;max-width:44ch">This product uses the TMDB API but is not endorsed or certified by TMDB. Dados e imagens fornecidos por The Movie Database (TMDB).</span>
     </div>
   </section>
-
   <section id="backup" style="margin-top:28px;padding-top:16px;border-top:1px solid var(--line)">
     <b>Meus dados e backup</b>
     <p class="m backup-note" style="margin:6px 0">Guarde uma cópia das suas listas e avaliações para não perdê-las se trocar de navegador ou dispositivo. O backup é um arquivo salvo no seu computador ou celular — ele não fica guardado automaticamente na internet.</p>
@@ -110,7 +109,8 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--pink);outline-o
 <div class="dock"><div><span class="cnt" id="cnt"></span><button class="big" id="gen">Gerar meu cartão</button></div></div>
 <div id="ov" role="dialog" aria-modal="true" aria-label="Cartão para compartilhar">
   <img id="out" alt="Cartão gerado">
-  <p class="hint">Para salvar, segure a imagem (celular) ou clique com o botão direito (computador).</p>
+  <div class="ovb" id="fmts" role="group" aria-label="Formato"><button class="b fm on-seen" data-f="story">Stories 9:16</button><button class="b fm" data-f="feed">Feed 4:5</button></div>
+  <p class="hint">Para postar no Stories use 9:16. Para o feed do Instagram, escolha 4:5. Salve segurando a imagem (celular) ou com o botão direito (computador).</p>
   <div class="ovb"><button class="b share" id="shr">Compartilhar</button><button class="b" id="cpy">Copiar texto e link</button><button class="b" id="cls">Fechar</button></div>
 </div>
 <script>
@@ -165,42 +165,49 @@ $("#list").addEventListener("click",async e=>{
   const i=S.it[id]||(S.it[id]={...find(id)});
   if(a==="seen"||a==="want"){if(i.st===a)delete S.it[id];else i.st=a}
   else if(a==="star"){i.r=i.r===+b.dataset.n?0:+b.dataset.n}
-  else if(a==="one"){save();const x=S.it[id];return show(await make("one",id),`Acabei de ver ${x.t} e dei ${x.r} de 5 estrelas! E você, já viu esse dorama? Monte seu diário de doramas também:`)}
+  else if(a==="one"){save();const x=S.it[id];return openCard("one",id,`Acabei de ver ${x.t} e dei ${x.r} de 5 estrelas! E você, já viu esse dorama? Monte seu diário de doramas também:`)}
   if(S.it[id]&&!S.it[id].st)delete S.it[id];
   save();render();
 });
-function wrap(c,text,x,y,w,lh,max){const ws=text.split(" ");let l="",n=0;for(const k of ws){const t=l?l+" "+k:k;if(c.measureText(t).width>w&&l){c.fillText(l,x,y);y+=lh;l=k;if(++n>=max-1)break}else l=t}c.fillText(l,x,y);return y+lh}
+function wrap(c,text,x,y,w,lh,max){const ws=text.split(" "),L=[];let l="";for(const k of ws){const t=l?l+" "+k:k;if(c.measureText(t).width>w&&l){L.push(l);l=k}else l=t}L.push(l);
+  const out=L.slice(0,max);if(L.length>max){let q=out[max-1];while(q.length>1&&c.measureText(q+"…").width>w)q=q.slice(0,-1);out[max-1]=q+"…"}
+  out.forEach((q,i)=>c.fillText(q,x,y+i*lh));return y+out.length*lh}
 const loadImg=p=>new Promise(res=>{if(!p)return res(null);const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);i.src=IMG+"w500"+p});
 function cover(c,img,t,x,y,w,h,r){c.save();c.beginPath();c.roundRect(x,y,w,h,r);c.clip();
   if(img){const s=Math.max(w/img.width,h/img.height),dw=img.width*s,dh=img.height*s;c.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh)}
   else{const hh=hue(t),g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,`hsl(${hh} 62% 50%)`);g.addColorStop(1,`hsl(${(hh+45)%360} 58% 24%)`);c.fillStyle=g;c.fillRect(x,y,w,h);
     c.fillStyle="rgba(255,255,255,.9)";c.textAlign="center";c.font=`${h*.2}px Gloock,Georgia,serif`;c.fillText(ini(t),x+w/2,y+h/2+h*.07)}c.restore()}
-function base(){const cv=document.createElement("canvas");cv.width=1080;cv.height=1920;const c=cv.getContext("2d");
-  const g=c.createLinearGradient(0,0,1080,1920);g.addColorStop(0,"#2B1034");g.addColorStop(1,"#5B1B55");c.fillStyle=g;c.fillRect(0,0,1080,1920);
-  c.fillStyle="rgba(255,106,152,.22)";c.beginPath();c.arc(980,260,330,0,7);c.fill();
-  c.fillStyle="rgba(63,203,175,.14)";c.beginPath();c.arc(70,1650,300,0,7);c.fill();
-  c.textAlign="center";c.fillStyle="#FFC2D6";c.font="600 38px Figtree,sans-serif";c.fillText("Meu diário de doramas",540,140);return[cv,c]}
-function foot(c){c.fillStyle="#fff";c.font="600 44px Figtree,sans-serif";c.textAlign="center";c.fillText(S.name?(S.name[0]==="@"?S.name:"@"+S.name):"",540,1790);c.fillStyle="#FFC2D6";c.font="600 32px Figtree,sans-serif";c.fillText(location.host,540,1850)}
+const FMTS={
+ story:{H:1920,lab:270,ttl:400,sub:475,st:540,AV:980,f1:1610,f2:1655,tsz:104,ns:6,nw:3,one:{cy:290,ch:700,ty:1070,tsz:76,lh:88,ssz:100,cl:3}},
+ feed:{H:1350,lab:100,ttl:215,sub:282,st:340,AV:830,f1:1245,f2:1295,tsz:92,ns:4,nw:3,one:{cy:150,ch:560,ty:790,tsz:64,lh:76,ssz:90,cl:2}}};
+let FMT="story",LAST=null;
+function base(P){const cv=document.createElement("canvas");cv.width=1080;cv.height=P.H;const c=cv.getContext("2d");
+  const g=c.createLinearGradient(0,0,1080,P.H);g.addColorStop(0,"#2B1034");g.addColorStop(1,"#5B1B55");c.fillStyle=g;c.fillRect(0,0,1080,P.H);
+  c.fillStyle="rgba(255,106,152,.22)";c.beginPath();c.arc(980,P.H*.14,330,0,7);c.fill();
+  c.fillStyle="rgba(63,203,175,.14)";c.beginPath();c.arc(70,P.H*.86,300,0,7);c.fill();
+  c.textAlign="center";c.fillStyle="#FFC2D6";c.font="600 38px Figtree,sans-serif";c.fillText("Meu diário de doramas",540,P.lab);return[cv,c]}
+function foot(c,P){c.textAlign="center";c.fillStyle="#fff";c.font="600 44px Figtree,sans-serif";c.fillText(S.name?(S.name[0]==="@"?S.name:"@"+S.name):"",540,P.f1);
+  c.fillStyle="#FFC2D6";c.font="600 32px Figtree,sans-serif";c.fillText(location.host,540,P.f2)}
 const stars=r=>"★".repeat(r)+"☆".repeat(5-r);
-async function drawOne(id,im){const[cv,c]=base(),x=S.it[id],img=im?await loadImg(x.p):null;
-  cover(c,img,x.t,230,230,620,880,36);
-  c.textAlign="center";c.fillStyle="#fff";c.font="80px Gloock,Georgia,serif";let y=wrap(c,x.t,540,1220,900,92,2);
-  c.fillStyle="#FF6A98";c.font="110px Figtree,sans-serif";c.fillText(stars(x.r),540,y+50);y+=140;
-  c.fillStyle="#fff";c.font="italic 600 46px Figtree,sans-serif";if(x.c)wrap(c,"“"+x.c+"”",540,y+20,860,62,3);
-  foot(c);return cv}
+async function drawOne(id,im,P){const[cv,c]=base(P),x=S.it[id],O=P.one,img=im?await loadImg(x.p):null,cw=O.ch/1.5;
+  cover(c,img,x.t,(1080-cw)/2,O.cy,cw,O.ch,36);
+  c.textAlign="center";c.fillStyle="#fff";c.font=`${O.tsz}px Gloock,Georgia,serif`;let y=wrap(c,x.t,540,O.ty,900,O.lh,2);
+  c.fillStyle="#FF6A98";c.font=`${O.ssz}px Figtree,sans-serif`;c.fillText(stars(x.r),540,y+O.ssz*.45);y+=O.ssz*1.25;
+  c.fillStyle="#fff";c.font="italic 600 44px Figtree,sans-serif";if(x.c)wrap(c,"“"+x.c+"”",540,y+20,860,58,O.cl);
+  foot(c,P);return cv}
 const fit=(c,s,w)=>{if(c.measureText(s).width<=w)return s;while(s.length>1&&c.measureText(s+"…").width>w)s=s.slice(0,-1);return s+"…"};
-async function drawList(im){const[cv,c]=base();
+async function drawList(im,P){const[cv,c]=base(P);
   const seen=Object.values(S.it).filter(x=>x.st==="seen"),want=Object.values(S.it).filter(x=>x.st==="want");
-  const sTop=[...seen].sort((a,b)=>(b.r||0)-(a.r||0)).slice(0,8),wTop=want.slice(0,4);
-  c.textAlign="center";c.fillStyle="#fff";c.font="104px Gloock,Georgia,serif";c.fillText(`${seen.length} ${seen.length===1?"dorama visto":"doramas vistos"}`,540,320);
-  c.fillStyle="#FFC2D6";c.font="600 44px Figtree,sans-serif";c.fillText(`${want.length} na fila para ver`,540,400);
+  const sTop=[...seen].sort((a,b)=>(b.r||0)-(a.r||0)).slice(0,P.ns),wTop=want.slice(0,P.nw);
+  c.textAlign="center";c.fillStyle="#fff";c.font=`${P.tsz}px Gloock,Georgia,serif`;c.fillText(`${seen.length} ${seen.length===1?"dorama visto":"doramas vistos"}`,540,P.ttl);
+  c.fillStyle="#FFC2D6";c.font="600 44px Figtree,sans-serif";c.fillText(`${want.length} na fila para ver`,540,P.sub);
   const[sI,wI]=await Promise.all([sTop,wTop].map(a=>Promise.all(a.map(x=>im?loadImg(x.p):null))));
-  if(!sTop.length&&!wTop.length){c.fillStyle="#fff";c.font="46px Figtree,sans-serif";c.fillText("Marque seus doramas para montar o cartão",540,700);foot(c);return cv}
-  const G=24,W=940,LB=70,AV=1260,SG=40,cap=n=>n===1?420:n===2?340:n===3?300:240;
+  if(!sTop.length&&!wTop.length){c.fillStyle="#fff";c.font="46px Figtree,sans-serif";c.fillText("Marque seus doramas para montar o cartão",540,P.st+100);foot(c,P);return cv}
+  const G=24,W=940,LB=70,AV=P.AV,SG=40,cap=n=>n===1?420:n===2?340:n===3?300:240;
   const dims=(n,k,txt)=>{const cc=Math.min(n,4),w=Math.min(cap(n)*k,(W-G*(cc-1))/cc),h=w*1.5,rows=Math.ceil(n/cc);return{cc,w,h,txt,H:LB+rows*(h+txt)+(rows-1)*G}};
   let k=1,A,B;const calc=()=>{A=sTop.length?dims(sTop.length,k,100):null;B=wTop.length?dims(wTop.length,k*.8,60):null;return(A?A.H:0)+(B?B.H:0)+(A&&B?SG:0)};
   while(calc()>AV&&k>.3)k-=.05;
-  let y=470+Math.min(Math.max((AV-calc())/2,0),100);
+  let y=P.st+Math.min(Math.max((AV-calc())/2,0),80);
   const sect=(label,col,items,imgs,d,seenSec)=>{
     c.textAlign="center";c.fillStyle=col;c.font="700 42px Figtree,sans-serif";c.fillText(label,540,y+42);const y1=y+LB;
     items.forEach((x,i)=>{const r=Math.floor(i/d.cc),ci=i%d.cc,inRow=Math.min(d.cc,items.length-r*d.cc),rowW=inRow*d.w+(inRow-1)*G;
@@ -211,13 +218,16 @@ async function drawList(im){const[cv,c]=base();
     y+=d.H+SG};
   if(A)sect("Já vi","#FF6A98",sTop,sI,A,true);
   if(B)sect("Quero ver","#3CCBAF",wTop,wI,B,false);
-  foot(c);return cv}
-async function make(kind,id){try{await document.fonts.load("100px Gloock")}catch(e){}
-  for(const im of [true,false]){const cv=await(kind==="one"?drawOne(id,im):drawList(im));try{cv.toDataURL();return cv}catch(e){}}}
+  foot(c,P);return cv}
+async function make(kind,id){const P=FMTS[FMT];try{await document.fonts.load("100px Gloock")}catch(e){}
+  for(const im of [true,false]){const cv=await(kind==="one"?drawOne(id,im,P):drawList(im,P));try{cv.toDataURL();return cv}catch(e){}}}
+const openCard=async(kind,id,txt)=>{LAST={kind,id,txt};show(await make(kind,id),txt)};
+const syncFm=()=>document.querySelectorAll(".fm").forEach(b=>b.classList.toggle("on-seen",b.dataset.f===FMT));
+document.querySelectorAll(".fm").forEach(b=>b.onclick=async()=>{FMT=b.dataset.f;syncFm();if(LAST)show(await make(LAST.kind,LAST.id),LAST.txt)});
 let blob=null;
 let shareTxt="";
 function show(cv,txt){shareTxt=txt||"";$("#cpy").textContent="Copiar texto e link";$("#out").src=cv.toDataURL("image/png");cv.toBlob(b=>blob=b);$("#ov").classList.add("open");$("#cls").focus()}
-$("#gen").onclick=async()=>{const n=Object.values(S.it).filter(x=>x.st==="seen").length;show(await make("list"),n?`Já vi ${n} ${n===1?"dorama":"doramas"}! E você, quais doramas já viu? Monte seu diário também:`:"Monte seu diário de doramas: marque o que já viu, dê sua nota e compartilhe!")};
+$("#gen").onclick=async()=>{const n=Object.values(S.it).filter(x=>x.st==="seen").length;openCard("list",null,n?`Já vi ${n} ${n===1?"dorama":"doramas"}! E você, quais doramas já viu? Monte seu diário também:`:"Monte seu diário de doramas: marque o que já viu, dê sua nota e compartilhe!")};
 $("#cls").onclick=()=>$("#ov").classList.remove("open");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#ov").classList.remove("open")});
 $("#shr").onclick=async()=>{const url=location.origin,text=shareTxt;
@@ -227,7 +237,6 @@ $("#shr").onclick=async()=>{const url=location.origin,text=shareTxt;
     else alert("Seu navegador não abre o compartilhamento direto. Salve a imagem, toque em Copiar texto e link e poste nos Stories.")}catch(e){}};
 $("#cpy").onclick=async()=>{const t=shareTxt+" "+location.origin;
   try{await navigator.clipboard.writeText(t);$("#cpy").textContent="Copiado!"}catch(e){prompt("Copie o texto abaixo:",t)}};
-
 function backupStatus(text,type="success"){const el=$("#backupMsg");el.textContent=text;el.className="backup-message show "+type;el.setAttribute("role",type==="error"?"alert":"status");}
 $("#exportBackup").addEventListener("click",()=>{
   try{
